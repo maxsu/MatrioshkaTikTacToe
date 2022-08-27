@@ -1,5 +1,5 @@
+import struct
 import tqdm
-import json
 
 # states:
 # neutral: 0
@@ -17,6 +17,8 @@ import json
 # 2 1 0       0 3 6       6 7 8       8 5 2
 # 5 4 3   =>  1 4 7   =>  3 4 5   =>  7 4 1
 # 8 7 6       2 5 8       0 1 2       6 3 0
+
+
 def symmetries(e):
     return {
         e,
@@ -52,11 +54,12 @@ def canonical_table(table):
     return sorted(symmetries(table))[0]
 
 
-def moves(table, figures):
-    for figure, count in figures:
+def moves(table, figures, is_max):
+    for figure_idx, count in enumerate(figures):
         if count == 0:
             continue
         visited_tables = set()
+        figure = figure_idx + 1 if is_max else -(figure_idx + 1)
         for idx in range(9):
             if abs(figure) > abs(table[idx]):
                 next_table = canonical_table(
@@ -65,7 +68,8 @@ def moves(table, figures):
                 if next_table not in visited_tables:
                     visited_tables.add(next_table)
                     remaining_figures = tuple(
-                        (f, c) if f != figure else (f, count - 1) for f, c in figures
+                        fc if f_idx != figure_idx else fc - 1
+                        for f_idx, fc in enumerate(figures)
                     )
                     yield next_table, remaining_figures
 
@@ -74,13 +78,16 @@ progress = tqdm.tqdm()
 
 
 def minimax(table, max_player, min_player, depth, resolved_states):
+    res = resolved_states.get((table, max_player, min_player), None)
+    if res is not None:
+        return res[0], table
     is_max = depth % 2 == 0
     sc = score(table)
     if sc is not None:
         progress.update(1)
         progress.set_postfix({"size": len(resolved_states)})
         return sc, table
-    next_states = list(moves(table, max_player if is_max else min_player))
+    next_states = list(moves(table, max_player if is_max else min_player, is_max))
     if len(next_states) == 0:
         progress.update(1)
         progress.set_postfix({"size": len(resolved_states)})
@@ -102,21 +109,16 @@ def minimax(table, max_player, min_player, depth, resolved_states):
             key=lambda x: x[0],
         )
 
-    resolved_states.append([depth, sc, list(table), list(next_table)])
+    resolved_states[(table, max_player, min_player)] = sc, next_table
     return sc, table
 
 
 if __name__ == "__main__":
-    states = list()
-    print(
-        minimax(
-            (0, 0, 0, 0, 0, 0, 0, 0, 0),
-            ((1, 2), (2, 2), (3, 2)),
-            ((-1, 2), (-2, 2), (-3, 2)),
-            0,
-            states,
-        )
-    )
+    states = dict()
+    print(minimax((0, 0, 0, 0, 0, 0, 0, 0, 0), (2, 2, 2), (2, 2, 2), 0, states))
 
-    with open("solution.json", "w") as fp:
-        json.dump(states, fp)
+    with open("solution.dat", "wb") as fp:
+        for key, value in states.items():
+            table, maxp, minp = key
+            values = list(table) + list(maxp) + list(minp) + [value[0]] + list(value[1])
+            fp.write(struct.pack(">25i", *values))
