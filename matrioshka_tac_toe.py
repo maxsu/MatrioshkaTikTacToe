@@ -19,19 +19,6 @@ import tqdm
 # 8 7 6       2 5 8       0 1 2       6 3 0
 
 
-def symmetries(e):
-    return {
-        e,
-        (e[6], e[3], e[0], e[7], e[4], e[1], e[8], e[5], e[2]),  # r1
-        (e[8], e[7], e[6], e[5], e[4], e[3], e[2], e[1], e[0]),  # r2
-        (e[2], e[5], e[8], e[1], e[4], e[7], e[0], e[3], e[6]),  # r3
-        (e[2], e[1], e[0], e[5], e[4], e[3], e[8], e[7], e[6]),  # Tx
-        (e[0], e[3], e[6], e[1], e[4], e[7], e[2], e[5], e[8]),  # T-1
-        (e[6], e[7], e[8], e[3], e[4], e[5], e[0], e[1], e[2]),  # Ty
-        (e[8], e[5], e[2], e[7], e[4], e[1], e[6], e[3], e[0]),  # T+1
-    }
-
-
 table_lines = (
     (0, 1, 2),
     (3, 4, 5),
@@ -58,8 +45,17 @@ def score(table):
     return None
 
 
-def canonical_table(table):
-    return min(symmetries(table))
+def canonical_table(e):
+    return min(
+        e,
+        (e[6], e[3], e[0], e[7], e[4], e[1], e[8], e[5], e[2]),  # r1
+        (e[8], e[7], e[6], e[5], e[4], e[3], e[2], e[1], e[0]),  # r2
+        (e[2], e[5], e[8], e[1], e[4], e[7], e[0], e[3], e[6]),  # r3
+        (e[2], e[1], e[0], e[5], e[4], e[3], e[8], e[7], e[6]),  # Tx
+        (e[0], e[3], e[6], e[1], e[4], e[7], e[2], e[5], e[8]),  # T-1
+        (e[6], e[7], e[8], e[3], e[4], e[5], e[0], e[1], e[2]),  # Ty
+        (e[8], e[5], e[2], e[7], e[4], e[1], e[6], e[3], e[0]),  # T+1
+    )
 
 
 def moves(table, figures, is_max):
