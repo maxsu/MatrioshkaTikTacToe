@@ -32,26 +32,34 @@ def symmetries(e):
     }
 
 
+table_lines = (
+    (0, 1, 2),
+    (3, 4, 5),
+    (6, 7, 8),
+    (0, 3, 6),
+    (1, 4, 7),
+    (2, 5, 8),
+    (0, 4, 8),
+    (2, 4, 6),
+)
+
+
 def score(table):
-    for line_idxs in (
-        (0, 1, 2),
-        (3, 4, 5),
-        (6, 7, 8),
-        (0, 3, 6),
-        (1, 4, 7),
-        (2, 5, 8),
-        (0, 4, 8),
-        (2, 4, 6),
-    ):
-        if all(table[li] > 0 for li in line_idxs):
+    for line_idxs in table_lines:
+
+        vals = [table[i] for i in line_idxs]
+
+        if min(vals) > 0:
             return 1
-        if all(table[li] < 0 for li in line_idxs):
+
+        if max(vals) < 0:
             return -1
+
     return None
 
 
 def canonical_table(table):
-    return sorted(symmetries(table))[0]
+    return min(symmetries(table))
 
 
 def moves(table, figures, is_max):
