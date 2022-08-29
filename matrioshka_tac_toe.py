@@ -45,6 +45,9 @@ table_lines = (
     (2, 4, 6),
 )
 
+STARTING_TABLE = (0, 0, 0, 0, 0, 0, 0, 0, 0)
+STARTING_HANDS = (2, 2, 2), (2, 2, 2)
+STARTING_STATE = STARTING_TABLE, *STARTING_HANDS
 
 def score(table):
     for line_idxs in table_lines:
@@ -134,7 +137,7 @@ def minimax(table, max_player, min_player, depth, resolved_states):
 
 if __name__ == "__main__":
     states = dict()
-    print(minimax((0, 0, 0, 0, 0, 0, 0, 0, 0), (2, 2, 2), (2, 2, 2), 0, states))
+    print(minimax(*STARTING_STATE, 0, states))
 
     with open("solution.dat", "wb") as fp:
         for key, value in states.items():
