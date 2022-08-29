@@ -30,11 +30,12 @@ Reflections:
  8 7 6       2 5 8       0 1 2       6 3 0
 """
 
+from typing import NamedTuple
 import tqdm
 import struct
 
 
-table_lines = (
+TABLE_LINES = (
     (0, 1, 2),
     (3, 4, 5),
     (6, 7, 8),
@@ -47,20 +48,75 @@ table_lines = (
 
 STARTING_TABLE = (0, 0, 0, 0, 0, 0, 0, 0, 0)
 STARTING_HANDS = (2, 2, 2), (2, 2, 2)
-STARTING_STATE = STARTING_TABLE, *STARTING_HANDS
 
-def score(table):
-    for line_idxs in table_lines:
 
-        vals = [table[i] for i in line_idxs]
+class State(NamedTuple):
+    table: tuple
+    max_player: tuple
+    min_player: tuple
+    depth: int
 
-        if min(vals) > 0:
-            return 1
+    def score(self):
+        for line in TABLE_LINES:
 
-        if max(vals) < 0:
-            return -1
+            vals = [self.table[i] for i in line]
 
-    return None
+            if min(vals) > 0:
+                return 1
+
+            if max(vals) < 0:
+                return -1
+
+        return None
+
+    def moves(self):
+
+        is_max = self.depth % 2
+        figures = self.max_player if is_max else self.min_player
+
+        for figure_idx, count in enumerate(figures):
+            if count == 0:
+                continue
+            visited_tables = set()
+            figure = figure_idx + 1 if is_max else -(figure_idx + 1)
+            for idx in range(9):
+                if abs(figure) > abs(self.table[idx]):
+                    next_table = canonical_table(
+                        tuple(
+                            t if i != idx else figure for i, t in enumerate(self.table)
+                        )
+                    )
+                    if next_table not in visited_tables:
+                        visited_tables.add(next_table)
+                        remaining_figures = tuple(
+                            fc if f_idx != figure_idx else fc - 1
+                            for f_idx, fc in enumerate(figures)
+                        )
+                        yield next_table, remaining_figures
+
+    def canonical_state(self):
+        t = self
+        return State(
+            min(
+                t,
+                (t[6], t[3], t[0], t[7], t[4], t[1], t[8], t[5], t[2]),  # r1
+                (t[8], t[7], t[6], t[5], t[4], t[3], t[2], t[1], t[0]),  # r2
+                (t[2], t[5], t[8], t[1], t[4], t[7], t[0], t[3], t[6]),  # r3
+                (t[2], t[1], t[0], t[5], t[4], t[3], t[8], t[7], t[6]),  # Tx
+                (t[0], t[3], t[6], t[1], t[4], t[7], t[2], t[5], t[8]),  # T-1
+                (t[6], t[7], t[8], t[3], t[4], t[5], t[0], t[1], t[2]),  # Ty
+                (t[8], t[5], t[2], t[7], t[4], t[1], t[6], t[3], t[0]),  # T+1
+            ),
+            t.max_player,
+            t.min_player,
+            t.depth,
+        )
+
+
+STARTING_STATE = State(STARTING_TABLE, *STARTING_HANDS, depth=0)
+
+
+progress = tqdm.tqdm()
 
 
 def canonical_table(e):
@@ -76,68 +132,53 @@ def canonical_table(e):
     )
 
 
-def moves(table, figures, is_max):
-    for figure_idx, count in enumerate(figures):
-        if count == 0:
-            continue
-        visited_tables = set()
-        figure = figure_idx + 1 if is_max else -(figure_idx + 1)
-        for idx in range(9):
-            if abs(figure) > abs(table[idx]):
-                next_table = canonical_table(
-                    tuple(t if i != idx else figure for i, t in enumerate(table))
-                )
-                if next_table not in visited_tables:
-                    visited_tables.add(next_table)
-                    remaining_figures = tuple(
-                        fc if f_idx != figure_idx else fc - 1
-                        for f_idx, fc in enumerate(figures)
-                    )
-                    yield next_table, remaining_figures
-
-
-progress = tqdm.tqdm()
-
-
-def minimax(table, max_player, min_player, depth, resolved_states):
-    res = resolved_states.get((table, max_player, min_player), None)
+def minimax(state, resolved_states):
+    res = resolved_states.get(state, None)
     if res is not None:
-        return res[0], table
-    is_max = depth % 2 == 0
-    sc = score(table)
+        return res[0], state.table
+    is_max = state.depth % 2 == 0
+    sc = state.score()
     if sc is not None:
         progress.update(1)
         progress.set_postfix({"size": len(resolved_states)})
-        return sc, table
-    next_states = list(moves(table, max_player if is_max else min_player, is_max))
+        return sc, state.table
+    next_states = list(state.moves())
     if len(next_states) == 0:
         progress.update(1)
         progress.set_postfix({"size": len(resolved_states)})
-        return 0, table
+        return 0, state.table
+
     if is_max:
         sc, next_table = max(
             (
-                minimax(next_t, next_f, min_player, depth + 1, resolved_states)
-                for next_t, next_f in next_states
-            ),
-            key=lambda x: x[0],
-        )
-    else:
-        sc, next_table = min(
-            (
-                minimax(next_t, max_player, next_f, depth + 1, resolved_states)
+                minimax(
+                    State(next_t, next_f, state.min_player, state.depth + 1),
+                    resolved_states,
+                )
                 for next_t, next_f in next_states
             ),
             key=lambda x: x[0],
         )
 
-    resolved_states[(table, max_player, min_player)] = sc, next_table
-    return sc, table
+    else:
+        sc, next_table = min(
+            (
+                minimax(
+                    State(next_t, state.max_player, next_f, state.depth + 1),
+                    resolved_states,
+                )
+                for next_t, next_f in next_states
+            ),
+            key=lambda x: x[0],
+        )
+
+    resolved_states[state] = sc, next_table
+    return sc, state.table
 
 
 if __name__ == "__main__":
     states = dict()
-    print(minimax(*STARTING_STATE, 0, states))
+    print(minimax(STARTING_STATE, states))
 
     with open("solution.dat", "wb") as fp:
         for key, value in states.items():
