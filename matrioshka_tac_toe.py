@@ -1,22 +1,37 @@
-import struct
+"""
+Minmax solution to matrioshka tic tac toe.
+
+Features:
+- Game state memoization
+- State Canonization based on 3x3 board symmetry group
+
+States:
+- Board: 3x3 => 9 long tuple (board[i][j] = tuple[i*3 + j])
+ - Squares: {-3, -2, -1, 0, 1, 2, 3} => 7 int values
+  - Neutral square: 0
+  - Player1 piece: 1, 2, 3
+  - Player2 piece: -1, -2, -3
+
+- Players: 6 pieces => 2x of 3 types => 3 long tuple
+ - Player1 figurines: 1, 1, 2, 2, 3, 3
+ - Player2 figurines: -1, -1, -2, -2, -3, -3
+
+Symmetries:
+- Rotations:
+ e         r1 (90)     r2 (180)    r3 (270)
+ 0 1 2       6 3 0       8 7 6       2 5 8
+ 3 4 5   =>  7 4 1   =>  5 4 3   =>  1 4 7
+ 6 7 8       8 5 2       2 1 0       0 3 6
+
+Reflections:
+ Tx       T-1=Tx(r1)   Ty=Tx(r2)  T+1=Tx(r3)
+ 2 1 0       0 3 6       6 7 8       8 5 2
+ 5 4 3   =>  1 4 7   =>  3 4 5   =>  7 4 1
+ 8 7 6       2 5 8       0 1 2       6 3 0
+"""
+
 import tqdm
-
-# states:
-# neutral: 0
-# player1: 1, 2, 3 (have 2 of each)
-# player2: -1, -2, -3 (have 2 of each)
-# board: 3x3 => 9 long tuple (board[i][j] = tuple[i*3 + j])
-
-# Rotations
-# e         r1 (90)     r2 (180)    r3 (270)
-# 0 1 2       6 3 0       8 7 6       2 5 8
-# 3 4 5   =>  7 4 1   =>  5 4 3   =>  1 4 7
-# 6 7 8       8 5 2       2 1 0       0 3 6
-# Reflections
-# Tx       T-1=Tx(r1)   Ty=Tx(r2)  T+1=Tx(r3)
-# 2 1 0       0 3 6       6 7 8       8 5 2
-# 5 4 3   =>  1 4 7   =>  3 4 5   =>  7 4 1
-# 8 7 6       2 5 8       0 1 2       6 3 0
+import struct
 
 
 table_lines = (
