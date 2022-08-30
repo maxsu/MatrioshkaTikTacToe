@@ -135,42 +135,40 @@ class State(NamedTuple):
         )
 
 
-STARTING_STATE = State(STARTING_TABLE, *STARTING_HANDS, depth=0)
-
-
-progress = tqdm.tqdm()
-
-
-def canonical_table(e):
+def canonical_table(t):
     return min(
-        e,
-        (e[6], e[3], e[0], e[7], e[4], e[1], e[8], e[5], e[2]),  # r1
-        (e[8], e[7], e[6], e[5], e[4], e[3], e[2], e[1], e[0]),  # r2
-        (e[2], e[5], e[8], e[1], e[4], e[7], e[0], e[3], e[6]),  # r3
-        (e[2], e[1], e[0], e[5], e[4], e[3], e[8], e[7], e[6]),  # Tx
-        (e[0], e[3], e[6], e[1], e[4], e[7], e[2], e[5], e[8]),  # T-1
-        (e[6], e[7], e[8], e[3], e[4], e[5], e[0], e[1], e[2]),  # Ty
-        (e[8], e[5], e[2], e[7], e[4], e[1], e[6], e[3], e[0]),  # T+1
+        t,
+        (t[6], t[3], t[0], t[7], t[4], t[1], t[8], t[5], t[2]),  # r1
+        (t[8], t[7], t[6], t[5], t[4], t[3], t[2], t[1], t[0]),  # r2
+        (t[2], t[5], t[8], t[1], t[4], t[7], t[0], t[3], t[6]),  # r3
+        (t[2], t[1], t[0], t[5], t[4], t[3], t[8], t[7], t[6]),  # Tx
+        (t[0], t[3], t[6], t[1], t[4], t[7], t[2], t[5], t[8]),  # T-1
+        (t[6], t[7], t[8], t[3], t[4], t[5], t[0], t[1], t[2]),  # Ty
+        (t[8], t[5], t[2], t[7], t[4], t[1], t[6], t[3], t[0]),  # T+1
     )
 
+
+STARTING_STATE = State(STARTING_TABLE, *STARTING_HANDS, depth=0)
+
+progress = tqdm.tqdm()
 
 depth_counter = Counter()
 
 
-def minimax(state, resolved_states):
-    res = resolved_states.get(state, None)
-    if res is not None:
-        return res[0], state.table
+def minimax(state, stateDB):
+
+    if cached_result := stateDB.get(state, None):
+        return cached_result[0], state.table
 
     if state.depth < 7:
         depth_counter[state.depth] += 1
         progress.set_postfix({"by_depth": depth_counter})
 
-    sc = state.score()
+    score = state.score()
 
-    if sc:
+    if score:
         progress.update(1)
-        return sc, state.table
+        return score, state.table
 
     next_states = state.moves()
 
@@ -178,21 +176,21 @@ def minimax(state, resolved_states):
         progress.update(1)
         return 0, state.table
 
-    sc, next_table = max(
-        (minimax(next_state, resolved_states) for next_state in next_states),
+    score, next_table = max(
+        (minimax(next_state, stateDB) for next_state in next_states),
         key=lambda x: -x[0],
     )
 
-    resolved_states[state] = sc, next_table
-    return sc, state.table
+    stateDB[state] = score, next_table
+    return score, state.table
 
 
 if __name__ == "__main__":
-    states = dict()
-    print(minimax(STARTING_STATE, states))
+    stateDB = dict()
+    print(minimax(STARTING_STATE, stateDB))
 
     with open("solution.dat", "wb") as fp:
-        for key, value in states.items():
+        for key, value in stateDB.items():
             table, maxp, minp = key
             values = list(table) + list(maxp) + list(minp) + [value[0]] + list(value[1])
             fp.write(struct.pack(">25i", *values))
