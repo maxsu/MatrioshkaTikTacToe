@@ -90,16 +90,16 @@ class State(NamedTuple):
 
             for i in range(9):
                 val = self.table[i]
-                if abs(figure) > abs(val):
+
+                square_empty = not val
+                fig_is_greater = abs(figure) > abs(val)
+                fig_is_opposite = figure * val <= 0
+
+                if square_empty or fig_is_greater and fig_is_opposite:
                     next_table = self.table[:i] + (figure,) + self.table[i + 1 :]
 
                     states.add(
-                        State.canonical(
-                            next_table,
-                            max_figs,
-                            min_figs,
-                            self.depth + 1,
-                        )
+                        State.canonical(next_table, max_figs, min_figs, self.depth + 1)
                     )
         return states
 
