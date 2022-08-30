@@ -79,37 +79,23 @@ class State(NamedTuple):
         states = set()
 
         for figure_idx, count in enumerate(figures):
-            if count == 0:
+            if not count:
                 continue
 
             figure = figure_idx + 1 if is_max else -(figure_idx + 1)
+
+            next_figs = figures[:figure_idx] + (count - 1,) + figures[figure_idx + 1 :]
+            max_figs, min_figs = (
+                (next_figs, self.min_player) if is_max else (self.max_player, next_figs)
+            )
+
             for idx in range(9):
                 if abs(figure) > abs(self.table[idx]):
                     next_table = canonical_table(
                         self.table[:idx] + (figure,) + self.table[idx + 1 :]
                     )
-                    remaining_figures = (
-                        figures[:figure_idx] + (count - 1,) + figures[figure_idx + 1 :]
-                    )
 
-                    if is_max:
-                        states.add(
-                            State(
-                                next_table,
-                                remaining_figures,
-                                self.min_player,
-                                self.depth + 1,
-                            )
-                        )
-                    else:
-                        states.add(
-                            State(
-                                next_table,
-                                self.max_player,
-                                remaining_figures,
-                                self.depth + 1,
-                            )
-                        )
+                    states.add(State(next_table, max_figs, min_figs, self.depth + 1))
         return states
 
     def canonical_state(self):
