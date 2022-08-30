@@ -73,7 +73,7 @@ class State(NamedTuple):
 
     def moves(self):
 
-        is_max = self.depth % 2
+        is_max = not self.depth % 2
         figures = self.max_player if is_max else self.min_player
 
         states = set()
