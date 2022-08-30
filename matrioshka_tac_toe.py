@@ -86,16 +86,16 @@ class State(NamedTuple):
             for idx in range(9):
                 if abs(figure) > abs(self.table[idx]):
                     next_table = canonical_table(
-                        tuple(
-                            t if i != idx else figure for i, t in enumerate(self.table)
-                        )
+                        self.table[:idx] + (figure,) + self.table[idx + 1 :]
                     )
                     if next_table not in visited_tables:
                         visited_tables.add(next_table)
-                        remaining_figures = tuple(
-                            fc if f_idx != figure_idx else fc - 1
-                            for f_idx, fc in enumerate(figures)
+                        remaining_figures = (
+                            figures[:figure_idx]
+                            + (count - 1,)
+                            + figures[figure_idx + 1 :]
                         )
+
                         if is_max:
                             states.append(
                                 State(
