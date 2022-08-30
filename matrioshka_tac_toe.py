@@ -161,7 +161,6 @@ def minimax(state, resolved_states):
     res = resolved_states.get(state, None)
     if res is not None:
         return res[0], state.table
-    is_max = state.depth % 2 == 0
 
     if state.depth < 7:
         depth_counter[state.depth] += 1
@@ -179,29 +178,10 @@ def minimax(state, resolved_states):
         progress.update(1)
         return 0, state.table
 
-    if is_max:
-        sc, next_table = max(
-            (
-                minimax(
-                    State(next_t, next_f, state.min_player, state.depth + 1),
-                    resolved_states,
-                )
-                for next_t, next_f in next_states
-            ),
-            key=lambda x: x[0],
-        )
-
-    else:
-        sc, next_table = min(
-            (
-                minimax(
-                    State(next_t, state.max_player, next_f, state.depth + 1),
-                    resolved_states,
-                )
-                for next_t, next_f in next_states
-            ),
-            key=lambda x: x[0],
-        )
+    sc, next_table = max(
+        (minimax(next_state, resolved_states) for next_state in next_states),
+        key=lambda x: -x[0],
+    )
 
     resolved_states[state] = sc, next_table
     return sc, state.table
