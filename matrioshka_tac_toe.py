@@ -30,6 +30,8 @@ Reflections:
  8 7 6       2 5 8       0 1 2       6 3 0
 """
 
+
+from collections import Counter
 from typing import NamedTuple
 import tqdm
 import struct
@@ -132,20 +134,26 @@ def canonical_table(e):
     )
 
 
+depth_counter = Counter()
+
+
 def minimax(state, resolved_states):
     res = resolved_states.get(state, None)
     if res is not None:
         return res[0], state.table
     is_max = state.depth % 2 == 0
+
+    if state.depth < 7:
+        depth_counter[state.depth] += 1
+        progress.set_postfix({"by_depth": depth_counter})
+
     sc = state.score()
     if sc is not None:
         progress.update(1)
-        progress.set_postfix({"size": len(resolved_states)})
         return sc, state.table
     next_states = list(state.moves())
     if len(next_states) == 0:
         progress.update(1)
-        progress.set_postfix({"size": len(resolved_states)})
         return 0, state.table
 
     if is_max:
