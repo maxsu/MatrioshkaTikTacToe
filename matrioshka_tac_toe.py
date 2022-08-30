@@ -76,6 +76,8 @@ class State(NamedTuple):
         is_max = self.depth % 2
         figures = self.max_player if is_max else self.min_player
 
+        states = []
+
         for figure_idx, count in enumerate(figures):
             if count == 0:
                 continue
@@ -94,7 +96,25 @@ class State(NamedTuple):
                             fc if f_idx != figure_idx else fc - 1
                             for f_idx, fc in enumerate(figures)
                         )
-                        yield next_table, remaining_figures
+                        if is_max:
+                            states.append(
+                                State(
+                                    next_table,
+                                    remaining_figures,
+                                    self.min_player,
+                                    self.depth + 1,
+                                )
+                            )
+                        else:
+                            states.append(
+                                State(
+                                    next_table,
+                                    self.max_player,
+                                    remaining_figures,
+                                    self.depth + 1,
+                                )
+                            )
+        return states
 
     def canonical_state(self):
         t = self
@@ -148,11 +168,14 @@ def minimax(state, resolved_states):
         progress.set_postfix({"by_depth": depth_counter})
 
     sc = state.score()
-    if sc is not None:
+
+    if sc:
         progress.update(1)
         return sc, state.table
-    next_states = list(state.moves())
-    if len(next_states) == 0:
+
+    next_states = state.moves()
+
+    if not next_states:
         progress.update(1)
         return 0, state.table
 
