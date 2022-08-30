@@ -76,44 +76,40 @@ class State(NamedTuple):
         is_max = self.depth % 2
         figures = self.max_player if is_max else self.min_player
 
-        states = []
+        states = set()
 
         for figure_idx, count in enumerate(figures):
             if count == 0:
                 continue
-            visited_tables = set()
+
             figure = figure_idx + 1 if is_max else -(figure_idx + 1)
             for idx in range(9):
                 if abs(figure) > abs(self.table[idx]):
                     next_table = canonical_table(
                         self.table[:idx] + (figure,) + self.table[idx + 1 :]
                     )
-                    if next_table not in visited_tables:
-                        visited_tables.add(next_table)
-                        remaining_figures = (
-                            figures[:figure_idx]
-                            + (count - 1,)
-                            + figures[figure_idx + 1 :]
-                        )
+                    remaining_figures = (
+                        figures[:figure_idx] + (count - 1,) + figures[figure_idx + 1 :]
+                    )
 
-                        if is_max:
-                            states.append(
-                                State(
-                                    next_table,
-                                    remaining_figures,
-                                    self.min_player,
-                                    self.depth + 1,
-                                )
+                    if is_max:
+                        states.add(
+                            State(
+                                next_table,
+                                remaining_figures,
+                                self.min_player,
+                                self.depth + 1,
                             )
-                        else:
-                            states.append(
-                                State(
-                                    next_table,
-                                    self.max_player,
-                                    remaining_figures,
-                                    self.depth + 1,
-                                )
+                        )
+                    else:
+                        states.add(
+                            State(
+                                next_table,
+                                self.max_player,
+                                remaining_figures,
+                                self.depth + 1,
                             )
+                        )
         return states
 
     def canonical_state(self):
