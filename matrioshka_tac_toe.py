@@ -85,22 +85,28 @@ class State(NamedTuple):
             figure = figure_idx + 1 if is_max else -(figure_idx + 1)
 
             next_figs = figures[:figure_idx] + (count - 1,) + figures[figure_idx + 1 :]
-            max_figs, min_figs = (
-                (next_figs, self.min_player) if is_max else (self.max_player, next_figs)
-            )
+            max_figs = next_figs if is_max else self.max_player
+            min_figs = self.min_player if is_max else next_figs
 
-            for idx in range(9):
-                if abs(figure) > abs(self.table[idx]):
-                    next_table = canonical_table(
-                        self.table[:idx] + (figure,) + self.table[idx + 1 :]
+            for i in range(9):
+                val = self.table[i]
+                if abs(figure) > abs(val):
+                    next_table = self.table[:i] + (figure,) + self.table[i + 1 :]
+
+                    states.add(
+                        State.canonical(
+                            next_table,
+                            max_figs,
+                            min_figs,
+                            self.depth + 1,
+                        )
                     )
-
-                    states.add(State(next_table, max_figs, min_figs, self.depth + 1))
         return states
 
-    def canonical_state(self):
-        t = self
-        return State(
+    @classmethod
+    def canonical(cls, table, max_p, min_p, depth):
+        t = table
+        return cls(
             min(
                 t,
                 (t[6], t[3], t[0], t[7], t[4], t[1], t[8], t[5], t[2]),  # r1
@@ -111,23 +117,10 @@ class State(NamedTuple):
                 (t[6], t[7], t[8], t[3], t[4], t[5], t[0], t[1], t[2]),  # Ty
                 (t[8], t[5], t[2], t[7], t[4], t[1], t[6], t[3], t[0]),  # T+1
             ),
-            t.max_player,
-            t.min_player,
-            t.depth,
+            max_p,
+            min_p,
+            depth,
         )
-
-
-def canonical_table(t):
-    return min(
-        t,
-        (t[6], t[3], t[0], t[7], t[4], t[1], t[8], t[5], t[2]),  # r1
-        (t[8], t[7], t[6], t[5], t[4], t[3], t[2], t[1], t[0]),  # r2
-        (t[2], t[5], t[8], t[1], t[4], t[7], t[0], t[3], t[6]),  # r3
-        (t[2], t[1], t[0], t[5], t[4], t[3], t[8], t[7], t[6]),  # Tx
-        (t[0], t[3], t[6], t[1], t[4], t[7], t[2], t[5], t[8]),  # T-1
-        (t[6], t[7], t[8], t[3], t[4], t[5], t[0], t[1], t[2]),  # Ty
-        (t[8], t[5], t[2], t[7], t[4], t[1], t[6], t[3], t[0]),  # T+1
-    )
 
 
 STARTING_STATE = State(STARTING_TABLE, *STARTING_HANDS, depth=0)
