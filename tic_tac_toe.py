@@ -16,7 +16,7 @@ import minimax
 
 if __name__ == "__main__":
     stateDB = dict()
-    starting_state = State.CanonicalMatrioshkaState.starting()
+    starting_state = State.TicTacToe.starting()
     print(
         minimax.minimax(
             starting_state,
@@ -24,8 +24,8 @@ if __name__ == "__main__":
         )
     )
 
-    with open("solution.dat", "wb") as fp:
-        for key, value in stateDB.items():
-            table, maxp, minp = key
-            values = list(table) + list(maxp) + list(minp) + [value[0]] + list(value[1])
-            fp.write(struct.pack(">25i", *values))
+    # with open("solution.dat", "wb") as fp:
+    #     for key, value in stateDB.items():
+    #         table, maxp, minp = key
+    #         values = list(table) + list(maxp) + list(minp) + [value[0]] + list(value[1])
+    #         fp.write(struct.pack(">25i", *values))
