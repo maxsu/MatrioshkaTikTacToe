@@ -32,6 +32,8 @@ DRAW = 0
 WIN = 1
 LOSS = -1
 
+X = 1
+O = -1
 
 class IFigures(Protocol):
     def get(self) -> Iterable[tuple[int, IFigures]]:
