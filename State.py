@@ -39,7 +39,7 @@ class IFigures(Protocol):
         ...
 
     @classmethod
-    def starting(cls):
+    def start(cls):
         """A starting set of figures"""
         ...
 
@@ -56,7 +56,7 @@ class Figures(tuple, IFigures):
                 yield figure, decrement(figure)
 
     @classmethod
-    def starting(cls):
+    def start(cls):
         return cls((2, 2, 2))
 
 
@@ -78,7 +78,7 @@ class ITable(Protocol):
         ...
 
     @classmethod
-    def empty(cls) -> ITable:
+    def start(cls) -> ITable:
         """An empty board"""
         ...
 
@@ -88,7 +88,7 @@ class Table(tuple, ITable):
         return Table(self[:i] + (fig,) + self[i + 1 :])
 
     @classmethod
-    def empty(cls):
+    def start(cls):
         return cls((0, 0, 0, 0, 0, 0, 0, 0, 0))
 
 
@@ -102,7 +102,7 @@ class IState(Protocol):
         ...
 
     @classmethod
-    def starting(cls) -> IState:
+    def start(cls) -> IState:
         """The starting state"""
         ...
 
@@ -157,8 +157,8 @@ class TicTacToe(IState, ILines):
         return states
 
     @classmethod
-    def starting(cls) -> IState:
-        return cls(Table.empty(), 0)
+    def start(cls) -> IState:
+        return cls(Table.start(), 0)
 
     def __repr__(self) -> str:
         result = ""
@@ -219,8 +219,8 @@ class MatrioshkaState(IState):
         return states
 
     @classmethod
-    def starting(cls):
-        return cls(Table.empty(), Figures.starting(), Figures.starting(), 0)
+    def start(cls):
+        return cls(Table.start(), Figures.start(), Figures.start(), 0)
 
 
 class CanonicalMatrioshkaState(MatrioshkaState, IState):

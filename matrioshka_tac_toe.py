@@ -16,7 +16,7 @@ import minimax
 
 if __name__ == "__main__":
     stateDB = dict()
-    starting_state = State.CanonicalMatrioshkaState.starting()
+    starting_state = State.CanonicalMatrioshkaState.start()
     print(
         minimax.minimax(
             starting_state,
