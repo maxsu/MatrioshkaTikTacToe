@@ -25,15 +25,12 @@ Reflections:
 """
 
 from __future__ import annotations
-from typing import Iterable, Iterator, NamedTuple, Protocol
-from dataclasses import dataclass
+from typing import Iterable, Iterator, Protocol
 
 DRAW = 0
 WIN = 1
 LOSS = -1
 
-X = 1
-O = -1
 
 class IFigures(Protocol):
     def get(self) -> Iterable[tuple[int, IFigures]]:
@@ -120,137 +117,3 @@ class ILines(Protocol):
         (0, 4, 8),
         (2, 4, 6),
     )
-
-
-@dataclass(eq=True, frozen=True)
-class TicTacToe(IState, ILines):
-
-    table: Table
-    depth: int
-
-    def score(self) -> int | None:
-        is_max = self.depth % 2 == 0
-
-        for line in self.LINES:
-
-            a, b, c = (self.table[i] for i in line)
-            
-            if is_max:
-                if a == b == c == X:
-                    return WIN
-                if a == b == c == O:
-                    return LOSS
-            else:
-                if a == b == c == X:
-                    return LOSS
-                if a == b == c == O:
-                    return WIN
-
-        return None
-
-    def moves(self) -> Iterable[IState]:
-
-        is_max = self.depth % 2 == 0
-        figure = 1 if is_max else -1
-
-        states = []
-
-        for square, square_occupied in enumerate(self.table):
-            if square_occupied:
-                continue
-
-            next_table = self.table.update(square, figure)
-
-            states.append(self.__class__(next_table, self.depth + 1))
-
-        return states
-
-    @classmethod
-    def start(cls) -> IState:
-        return cls(Table.start(), 0)
-
-    def __repr__(self) -> str:
-        result = ""
-
-        for row in range(0, 9, 3):
-
-            vm = {-1: "O", 1: "X", 0: " "}
-            _row = self.table[row : row + 3]
-            _row = [vm[x] for x in _row]
-            result += "".join(_row) + "\n"
-        return result
-
-
-@dataclass(eq=True, frozen=True)
-class MatrioshkaState(IState):
-    table: ITable
-    max_player: IFigures
-    min_player: IFigures
-    depth: int
-
-    def score(self):
-        for line in TABLE_LINES:
-
-            vals = [self.table[i] for i in line]
-
-            if min(vals) > 0:
-                return 1
-
-            if max(vals) < 0:
-                return -1
-
-        return None
-
-    def moves(self):
-        is_max = not self.depth % 2
-
-        figures = self.max_player if is_max else self.min_player
-
-        states = set()
-
-        for figure_idx, next_figs in figures.get():
-
-            figure = figure_idx + 1 if is_max else -(figure_idx + 1)
-            max_figs = next_figs if is_max else self.max_player
-            min_figs = self.min_player if is_max else next_figs
-
-            for i, val in enumerate(self.table):
-                square_empty = not val
-                enemy_fig = figure * val < 0
-                enemy_is_lesser = abs(figure) > abs(val)
-
-                if square_empty or enemy_fig and enemy_is_lesser:
-                    next_table = self.table.update(i, figure)
-
-                    states.add(
-                        self.__class__(next_table, max_figs, min_figs, self.depth + 1)
-                    )
-        return states
-
-    @classmethod
-    def start(cls):
-        return cls(Table.start(), Figures.start(), Figures.start(), 0)
-
-
-class CanonicalMatrioshkaState(MatrioshkaState, IState):
-    def __init__(self, table, max_player, min_player, depth):
-        t = table
-        t = Table(
-            min(
-                t,
-                (t[6], t[3], t[0], t[7], t[4], t[1], t[8], t[5], t[2]),  # r1
-                (t[8], t[7], t[6], t[5], t[4], t[3], t[2], t[1], t[0]),  # r2
-                (t[2], t[5], t[8], t[1], t[4], t[7], t[0], t[3], t[6]),  # r3
-                (t[2], t[1], t[0], t[5], t[4], t[3], t[8], t[7], t[6]),  # Tx
-                (t[0], t[3], t[6], t[1], t[4], t[7], t[2], t[5], t[8]),  # T-1
-                (t[6], t[7], t[8], t[3], t[4], t[5], t[0], t[1], t[2]),  # Ty
-                (t[8], t[5], t[2], t[7], t[4], t[1], t[6], t[3], t[0]),  # T+1
-            )
-        )
-
-        super().__init__(
-            t,
-            max_player,
-            min_player,
-            depth,
-        )
