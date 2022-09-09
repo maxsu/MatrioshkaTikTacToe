@@ -129,15 +129,22 @@ class TicTacToe(IState, ILines):
     depth: int
 
     def score(self) -> int | None:
+        is_max = self.depth % 2 == 0
+
         for line in self.LINES:
 
             a, b, c = (self.table[i] for i in line)
-
-            if a == b == c == 1:
-                return WIN
-
-            if a == b == c == -1:
-                return LOSS
+            
+            if is_max:
+                if a == b == c == X:
+                    return WIN
+                if a == b == c == O:
+                    return LOSS
+            else:
+                if a == b == c == X:
+                    return LOSS
+                if a == b == c == O:
+                    return WIN
 
         return None
 
